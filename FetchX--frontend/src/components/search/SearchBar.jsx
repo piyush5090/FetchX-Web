@@ -19,9 +19,15 @@ const SearchBar = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (localQuery.trim()) {
-      dispatch(setSearchTerms({ query: localQuery.trim(), mediaType: localMediaType }));
+    const trimmedQuery = localQuery.trim();
+    if (!trimmedQuery) return;
+
+    // Prevent re-fetching if nothing has changed
+    if (trimmedQuery === currentQuery && localMediaType === currentMediaType) {
+      return;
     }
+
+    dispatch(setSearchTerms({ query: trimmedQuery, mediaType: localMediaType }));
   };
 
   return (

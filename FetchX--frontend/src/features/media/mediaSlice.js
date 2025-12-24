@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { fetchPexels, fetchUnsplash, fetchPixabay } from '../../services/api';
+import { fetchPexels, fetchUnsplash, fetchPixabay, fetchProviderCounts } from '../../services/api';
 
 // Normalization functions for each provider
 const normalizePexels = (item, mediaType) => {
@@ -48,10 +48,21 @@ const normalizePixabay = (item, mediaType) => ({
   photographer_url: `https://pixabay.com/users/${item.user}-${item.user_id}`,
 });
 
+export const fetchSearchCounts = createAsyncThunk(
+  'media/fetchSearchCounts',
+  async (_, { getState }) => {
+    const { query, mediaType } = getState().media;
+    if (!query) return null;
+    const response = await fetchProviderCounts(query, mediaType);
+    return response.providers;
+  }
+);
+
 export const fetchMedia = createAsyncThunk(
   'media/fetchMedia',
   async (_, { getState }) => {
     const { query, mediaType, page } = getState().media;
+    
     let promises = [];
 
     if (mediaType === 'images') {
@@ -81,12 +92,14 @@ export const fetchMedia = createAsyncThunk(
 
 const initialState = {
   items: [],
-  query: 'cartoons',
+  query: '',
   mediaType: 'images',
   page: 1,
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
   selectedItem: null,
+  providerCounts: null,
+  countsStatus: 'idle',
 };
 
 const mediaSlice = createSlice({
@@ -98,6 +111,9 @@ const mediaSlice = createSlice({
       state.mediaType = action.payload.mediaType;
       state.page = 1;
       state.items = [];
+      // Reset counts when a new search is initiated
+      state.providerCounts = null;
+      state.countsStatus = 'idle';
     },
     setQuery: (state, action) => {
       state.query = action.payload;
@@ -121,6 +137,7 @@ const mediaSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Reducers for fetchMedia
       .addCase(fetchMedia.pending, (state) => {
         state.status = 'loading';
       })
@@ -131,6 +148,17 @@ const mediaSlice = createSlice({
       .addCase(fetchMedia.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
+      })
+      // Reducers for fetchSearchCounts
+      .addCase(fetchSearchCounts.pending, (state) => {
+        state.countsStatus = 'loading';
+      })
+      .addCase(fetchSearchCounts.fulfilled, (state, action) => {
+        state.countsStatus = 'succeeded';
+        state.providerCounts = action.payload;
+      })
+      .addCase(fetchSearchCounts.rejected, (state) => {
+        state.countsStatus = 'failed';
       });
   },
 });

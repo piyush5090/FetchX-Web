@@ -28,3 +28,7 @@ export const fetchPixabay = (type, query, page) => {
   const pixabayType = type === 'images' ? 'photos' : type;
   return fetchFromAPI(`metadata/pixabay/${pixabayType}?query=${query}&page=${page}&perPage=15`);
 };
+
+export const fetchProviderCounts = (query, mediaType) => {
+  return fetchFromAPI(`search?query=${query}&type=${mediaType}`);
+};

@@ -1,24 +1,41 @@
 import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchMedia, setPage } from '../../features/media/mediaSlice';
+import { fetchMedia, setPage, fetchSearchCounts, setSearchTerms } from '../../features/media/mediaSlice';
 import SearchBar from '../search/SearchBar';
 import MediaGrid from '../media/MediaGrid';
+import ProviderStats from '../search/ProviderStats';
 import { LuChevronLeft, LuChevronRight, LuLoader, LuLayers, LuZap } from 'react-icons/lu';
 
 const Home = () => {
   const dispatch = useDispatch();
   const { query, mediaType, page, items, status } = useSelector((state) => state.media);
 
+  // Effect for fetching media items
   useEffect(() => {
-    dispatch(fetchMedia());
+    if(query) { // Only fetch if there's a query
+      dispatch(fetchMedia());
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [dispatch, query, mediaType, page]);
+
+  // Effect for fetching provider counts
+  useEffect(() => {
+    if(query) {
+      dispatch(fetchSearchCounts());
+    }
+  }, [dispatch, query, mediaType]);
 
   const handleNextPage = () => dispatch(setPage(page + 1));
   const handlePrevPage = () => page > 1 && dispatch(setPage(page - 1));
 
   // Determine if we should show the "Hero" feel (only on landing/page 1)
   const isLanding = useMemo(() => !query && page === 1, [query, page]);
+  
+  const handleMediaTypeChange = (newType) => {
+    if (mediaType !== newType) {
+      dispatch(setSearchTerms({ query, mediaType: newType }));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617] transition-colors duration-500">
@@ -68,19 +85,22 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
-             <button className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mediaType === 'images' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-                Photos
-             </button>
-             <button className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mediaType === 'videos' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-                Motion
-             </button>
+          <div className="flex items-center gap-6">
+            <ProviderStats />
+            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+              <button onClick={() => handleMediaTypeChange('images')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mediaType === 'images' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                  Photos
+              </button>
+              <button onClick={() => handleMediaTypeChange('videos')} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mediaType === 'videos' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                  Motion
+              </button>
+            </div>
           </div>
         </div>
 
         {/* The Media Feed */}
         <div className="min-h-[400px]">
-          <MediaGrid key={query} />
+          <MediaGrid key={`${query}-${mediaType}`} />
         </div>
 
         {/* 3. Floating Modern Pagination */}
