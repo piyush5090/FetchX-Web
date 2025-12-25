@@ -1,5 +1,5 @@
 //const API_BASE_URL = 'http://localhost:3000';
-const API_BASE_URL = 'https://fetchx-backend.onrender.com';
+const API_BASE_URL = 'https://fetchx-backend-fucw.onrender.com';
 
 
 
